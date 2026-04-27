@@ -17,10 +17,10 @@ public class Reserva {
     private String nomeMorador;
 
     @Column(nullable = false)
-    private String cpfMorador;
+    private String telefoneMorador;
 
     @Column(nullable = false)
-    private String unidade;
+    private String apartamento;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
