@@ -20,7 +20,7 @@ public class ReservaController {
     // CREATE - Criar uma nova reserva
     @PostMapping
     public ResponseEntity<Reserva> criar(@RequestBody Reserva reserva) {
-        Reserva novaReserva = repository.save(reserva);
+        @SuppressWarnings("null") Reserva novaReserva = repository.save(reserva);
         return ResponseEntity.status(HttpStatus.CREATED).body(novaReserva);
     }
 
@@ -32,7 +32,7 @@ public class ReservaController {
 
     // READ - Buscar reserva por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Reserva> buscarPorId(@PathVariable Long id) {
+    @SuppressWarnings("null") public ResponseEntity<Reserva> buscarPorId(@PathVariable Long id) {
         return repository.findById(id)
                 .map(record -> ResponseEntity.ok().body(record))
                 .orElse(ResponseEntity.notFound().build());
@@ -47,7 +47,7 @@ public class ReservaController {
 
     // UPDATE - Atualizar uma reserva existente
     @PutMapping("/{id}")
-    public ResponseEntity<Reserva> atualizar(@PathVariable Long id, @RequestBody Reserva reserva) {
+    @SuppressWarnings("null") public ResponseEntity<Reserva> atualizar(@PathVariable Long id, @RequestBody Reserva reserva) {
         return repository.findById(id)
                 .map(record -> {
                     record.setNomeMorador(reserva.getNomeMorador());
@@ -63,7 +63,7 @@ public class ReservaController {
 
     // DELETE - Remover uma reserva
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletar(@PathVariable Long id) {
+    @SuppressWarnings("null") public ResponseEntity<?> deletar(@PathVariable Long id) {
         return repository.findById(id)
                 .map(record -> {
                     repository.deleteById(id);
