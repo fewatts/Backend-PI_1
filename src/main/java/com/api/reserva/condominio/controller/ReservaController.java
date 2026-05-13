@@ -1,11 +1,13 @@
 package com.api.reserva.condominio.controller;
 
 import com.api.reserva.condominio.domain.model.Reserva;
+import com.api.reserva.condominio.domain.model.Usuario;
 import com.api.reserva.condominio.domain.repository.ReservaRepository;
+import com.api.reserva.condominio.domain.service.ReservaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,11 +19,19 @@ public class ReservaController {
     @Autowired
     private ReservaRepository repository;
 
+    @Autowired
+    private ReservaService service;
+
     // CREATE - Criar uma nova reserva
     @PostMapping
-    public ResponseEntity<Reserva> criar(@RequestBody Reserva reserva) {
-        @SuppressWarnings("null") Reserva novaReserva = repository.save(reserva);
-        return ResponseEntity.status(HttpStatus.CREATED).body(novaReserva);
+    public ResponseEntity<?> criar(@RequestBody Reserva reserva, @AuthenticationPrincipal Usuario logado) {
+        try {
+            // O logado vem direto do Token validado pelo seu Filtro
+            var novaReserva = service.salvar(reserva, logado);
+            return ResponseEntity.ok(novaReserva);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // READ - Listar todas as reservas
@@ -32,7 +42,7 @@ public class ReservaController {
 
     // READ - Buscar reserva por ID
     @GetMapping("/{id}")
-    @SuppressWarnings("null") public ResponseEntity<Reserva> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<Reserva> buscarPorId(@PathVariable Long id) {
         return repository.findById(id)
                 .map(record -> ResponseEntity.ok().body(record))
                 .orElse(ResponseEntity.notFound().build());
@@ -41,33 +51,31 @@ public class ReservaController {
     // READ - Buscar reservas por nome do morador (ou parte do nome)
     @GetMapping("/buscar")
     public ResponseEntity<List<Reserva>> buscarPorMorador(@RequestParam String nome) {
-        List<Reserva> reservas = repository.findByNomeMoradorContainingIgnoreCase(nome);
+        List<Reserva> reservas = repository.findByUsuarioLoginContainingIgnoreCase(nome);
         return ResponseEntity.ok(reservas);
     }
 
     // UPDATE - Atualizar uma reserva existente
     @PutMapping("/{id}")
-    @SuppressWarnings("null") public ResponseEntity<Reserva> atualizar(@PathVariable Long id, @RequestBody Reserva reserva) {
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody Reserva dadosAtualizados) {
         return repository.findById(id)
-                .map(record -> {
-                    record.setNomeMorador(reserva.getNomeMorador());
-                    record.setTelefoneMorador(reserva.getTelefoneMorador());
-                    record.setApartamento(reserva.getApartamento());
-                    record.setEspaco(reserva.getEspaco());
-                    record.setDataHoraInicio(reserva.getDataHoraInicio());
-                    record.setDataHoraFim(reserva.getDataHoraFim());
-                    Reserva atualizada = repository.save(record);
-                    return ResponseEntity.ok().body(atualizada);
+                .map(reserva -> {
+                    reserva.setEspaco(dadosAtualizados.getEspaco());
+                    reserva.setDataHoraInicio(dadosAtualizados.getDataHoraInicio());
+                    reserva.setDataHoraFim(dadosAtualizados.getDataHoraFim());
+                    var atualizada = repository.save(reserva);
+                    return ResponseEntity.ok(atualizada);
                 }).orElse(ResponseEntity.notFound().build());
     }
 
     // DELETE - Remover uma reserva
     @DeleteMapping("/{id}")
-    @SuppressWarnings("null") public ResponseEntity<?> deletar(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(record -> {
-                    repository.deleteById(id);
-                    return ResponseEntity.ok().build();
-                }).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> excluir(@PathVariable Long id, @AuthenticationPrincipal Usuario logado) {
+        try {
+            service.excluir(id, logado);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 }
