@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,6 +18,7 @@ public class AutenticacaoController {
     @Autowired private AuthenticationManager manager;
     @Autowired private UsuarioRepository repository;
     @Autowired private TokenService tokenService;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid DadosAutenticacao dados) {
@@ -31,7 +32,7 @@ public class AutenticacaoController {
     public ResponseEntity<?> registrar(@RequestBody @Valid DadosRegistro dados) {
         if (repository.findByLogin(dados.login()) != null) return ResponseEntity.badRequest().body("Login já existe");
         
-        String senhaCripto = new BCryptPasswordEncoder().encode(dados.senha());
+        String senhaCripto = passwordEncoder.encode(dados.senha());
         // Se o JSON não mandar Role, vira USER por padrão
         UserRole role = (dados.role() != null) ? dados.role() : UserRole.USER;
         
